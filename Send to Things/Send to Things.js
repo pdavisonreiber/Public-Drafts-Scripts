@@ -2,6 +2,12 @@
 var presetProjects = ["School", "Teaching", "IT", "CPD", "Maths Society"]
 var presetAreas = ["School", "Personal", "Hobbies"]
 
+function dateNoTime(date) {
+	dateRegex = /\w{3} \w{3} \d{2}\ \d{4}/
+	console.log(dateRegex.exec(date))
+	return dateRegex.exec(date)
+}
+
 // Prompt to select where task will go.
 var targetPrompt = Prompt.create()
 
@@ -73,10 +79,10 @@ if (!didSelectTarget) {
 				task.title = draft.processTemplate("[[title]]")
 				task.notes = draft.processTemplate("[[body]]")
 				if (hasDate) {
-					task.when = date
+					task.when = dateNoTime(date)
 				}
 				if (hasDeadline) {
-					task.deadline = deadline
+					task.deadline = dateNoTime(deadline)
 				}
 				if (projectChoice == "Other") {
 					task.list = otherProject
