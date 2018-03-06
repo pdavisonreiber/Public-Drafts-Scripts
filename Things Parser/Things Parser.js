@@ -96,29 +96,29 @@ function nonEmptyLine(line) {
 	return notJustWhitespaceRegex.test(line)
 } 
 
-function processDraft(content) {
-	var lines = content.split("\n")
+function thingsCallback(tasks) {
+	var container = TJSContainer.create(tasks)
+	var callback = CallbackURL.create()
+	callback.baseURL = container.url
+	var success = callback.open()
+	if (success) {
+		console.log("Success")
+		console.log("")
+	}
+	else {
+		context.fail()
+	}
+}
+
+function processDraft() {
+	var lines = draft.content.split("\n")
 	lines = lines.filter(nonEmptyLine)
 	var tasks = []
 	for (var line of lines) {
 		var task = processLine(line)
 		tasks.push(task)
 	}
-	return tasks
-}
-
-function thingsCallback(content) {
-	var tasks = processDraft(content)
-	var container = TJSContainer.create(tasks)
-	var callback = CallbackURL.create()
-	callback.baseURL = container.url
-	var success = callback.open()
-	if (success) {
-		console.log("Success");
-	}
-	else {
-		context.fail();
-	}
+	thingsCallback(tasks)
 }
 
 // Chrono, minified, below:
@@ -307,4 +307,4 @@ chrono.strict.refiners.push(PreferFutureNextWeek)
 
 // Run script on draft
 
-thingsCallback(draft.content)
+processDraft()
