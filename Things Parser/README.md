@@ -8,7 +8,7 @@ It was inspired by [Federico Viticci’s][4] [article in MacStories][5] about th
 
 My script is fully compatible with his syntax:
 
-- # Project Name 
+- \# Project Name 
 - @Tag Name
 - ==Heading
 - ++Task note
