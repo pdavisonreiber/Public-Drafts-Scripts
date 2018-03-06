@@ -1,8 +1,72 @@
 /*
+# Things Parser
 
+## Intro
+
+This script is designed to be used with [Drafts 5][1]. It takes each line of the current draft and turns it into a task in [Things 3][2]. It uses the [add-json command][3] to add all of the tasks in a single URL scheme call. It uses the [Chrono JS parser][7] for natural language date and time processing, rather than just relying on the more basic date and time recognition built into Things.
+
+It was inspired by [Federico Viticci’s][4] [article in MacStories][5] about the [workflow he built][6] to do the same thing.
+
+My script is fully compatible with his syntax:
+
+- # Project Name 
+- @Tag Name
+- ==Heading
+- ++Task note
+
+It is also compatible with his syntax for date and time strings:
+
+- \\\\natural date and time string
+
+However, the double backslash is no longer required since Chrono can detect the date-time string wherever it is written in the line. The script also automatically detects whether or not a time has been written. If a date and time are written, it adds a task with that date and a reminder at that time. If only a date is written, it doesn’t add a reminder.
+
+In addition, my script adds the following syntax:
+
+- !natural language deadline string
+- *checklist item
+
+As with tag names in Federico’s workflow, multiple checklist items can also be entered.
+
+The automatic escaping of special characters is handled by Drafts, so there shouldn’t be any JSON errors. Syntax characters as detailed above can be used in other fields, as long as they are not immediately preceded by a space. So for example, 
+
+++Note containing email address: me@domain.com 
+
+is perfectly fine.
+
+## Examples
+
+Task name
+*Adds item to Inbox*
+
+Task name on Wednesday
+*Adds item to Upcoming with Wednesday as date*
+
+Task name on Wednesday at 6pm
+*Adds item to Upcoming with Wednesday as date and a reminder at 6pm*
+
+Task name on Wednesday at 6pm !Friday
+*Same as above with a deadline of Friday*
+
+Task name on Wednesday at 6pm #Project Name ==Heading @Tag 1 @Tag 2 ++Additional Note !Friday *first thing *second thing *third thing
+
+Adds item to project called “Project Name” under heading “Heading” with date of Wednesday, reminder at 6pm, two tags “Tag 1” and “Tag 2”, an additional note “Additional Note”, and a checklist with the following three items:
+
+* first thing
+* second thing
+* third thing
+
+[1]: https://agiletortoise.github.io/drafts-documentation/
+[2]: https://itunes.apple.com/gb/app/things-3-for-ipad/id904244226?mt=8&uo=4&at=1001lsF2
+[3]: https://support.culturedcode.com/customer/en/portal/articles/2803573#add-json
+[4]: https://www.twitter.com/viticci
+[5]: https://www.macstories.net/ios/things-automation-building-a-natural-language-parser-in-workflow/
+[6]: https://workflow.is/workflows/b852622a129a45ab81322b0003a7314a
+[7]: https://github.com/wanasit/chrono
 
 */
 
+// Regex for fields
+// As is always the case with regex, it works, but I'm exactly sure how. 
 var tagRegex = / @((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/g
 var titleRegex = /^(.(?! #| \+\+| @| \=\=| \!| \*))*\S/
 var projectRegex = / #((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
@@ -11,6 +75,7 @@ var headingRegex = / \=\=((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
 var deadlineRegex = / \!((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
 var checklistRegex = / \*((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/g
 
+// Formats JS date objects in the form 2018-03-06 or 2018-03-06@17:54 
 function thingsDateFormat(date, includeTime) {
 	isoDate = date.toISOString()
 	if (!includeTime) {
@@ -20,53 +85,64 @@ function thingsDateFormat(date, includeTime) {
 	}
 }
 
+// Processes each line and turns it into a task object
 function processLine(line) {
 	var task = TJSTodo.create()
 	
+	// Find deadline string, and remove it from line
 	if (deadlineRegex.test(line)) {
 		deadlineString = deadlineRegex.exec(line)[1]
 		task.deadline = thingsDateFormat(chrono.parse(deadlineString)[0].start.date(), false)
 		line = line.replace("!" + deadlineString, "")
 	}
 	
+	// Parse remaining dates in the line
 	var parsedDates = chrono.parse(line)
 	console.log("Parsed dates: " + JSON.stringify(parsedDates))
 	if (parsedDates.length > 0) {
 		if (parsedDates.length > 1) {
 			console.log("WARNING: " + parsedDates.length + " dates found in this line: " + line)
 		}
+		// Decide if user entered a time or not. If so, add a reminder.
 		var hasReminder = parsedDates[0].start.knownValues.hasOwnProperty("hour")
 		var date = thingsDateFormat(parsedDates[0].start.date(), hasReminder)
 		task.when = date
 		
+		// Remove parsed string from line
 		line = line.replace(parsedDates[0].text, "")
+		// Remove \\ from line for compatibility with Ticci's syntax
 		line = line.replace("\\\\", "")
 	}
 	
+	// Find title
 	if (titleRegex.test(line)) {
 		task.title = titleRegex.exec(line)[0].trim()
 	}
 	
+	// Find notes
 	if (noteRegex.test(line)) {
 		task.notes = noteRegex.exec(line)[1].trim()
 
 	}
 	
+	// Find project
 	if (projectRegex.test(line)) {
 	task.list = projectRegex.exec(line)[1].trim()
 	}
 	
+	// Find heading
 	if (headingRegex.test(line)) {
 	task.heading = headingRegex.exec(line)[1].trim()
 	}
 	
-
+	// Find tags
 	var tags = []
 	while ((match = tagRegex.exec(line)) != null) {
 		tags.push(match[1].trim())
 	}
 	task.tags = tags
 
+	// Find checklist items
 	var checklist = []
 	var checklistTitles = []
 	while ((match = checklistRegex.exec(line)) != null) {
@@ -79,6 +155,7 @@ function processLine(line) {
 		task.addChecklistItem(item)
 	}
 	
+	// Log all found values to the console
 	console.log("Title: " + task.title)
 	console.log("Date: " + date)
 	console.log("Deadline: " + task.deadline)
@@ -91,11 +168,13 @@ function processLine(line) {
 	return task
 }
 
+// Test if line is empty
 function nonEmptyLine(line) {
 	notJustWhitespaceRegex = /\S/
 	return notJustWhitespaceRegex.test(line)
 } 
 
+// Create x-callback-url and send all tasks to Things
 function thingsCallback(tasks) {
 	var container = TJSContainer.create(tasks)
 	var callback = CallbackURL.create()
@@ -110,6 +189,7 @@ function thingsCallback(tasks) {
 	}
 }
 
+// Split lines and turn each into a task
 function processDraft() {
 	var lines = draft.content.split("\n")
 	lines = lines.filter(nonEmptyLine)
@@ -274,6 +354,7 @@ var NUMBER={"零":0,"一":1,"二":2,"兩":2,"三":3,"四":4,"五":5,"六":6,"七
 // Refiner
 // Adapted from https://github.com/wanasit/chrono/issues/19#issuecomment-164419896
 
+// Tweaks Chrono so that when days of the week are entered, e.g. "Monday", they are assumed to be in the future. This is because Things deliberately does not allow task dates to be in the past.
 function isPastDate({year, month, day}, ref) {
   let refDay = ref.getDate()
   let refMonth = ref.getMonth() + 1
