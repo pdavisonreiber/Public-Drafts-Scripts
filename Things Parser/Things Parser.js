@@ -65,7 +65,7 @@ Adds item to project called “Project Name” under heading “Heading” with 
 
 */
 
-// Regex for fields
+// A sprinkling of delicious regex
 // As is always the case with regex, it works, but I'm exactly sure how. 
 var tagRegex = / @((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/g
 var titleRegex = /^(.(?! #| \+\+| @| \=\=| \!| \*))*\S/
