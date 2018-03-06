@@ -28,7 +28,7 @@ function nextLinkNumber() {
 	while (!nonWhitespaceRegex.test(lastLine)){
 		lastLine = lines.pop()
 	}	
-	var refRegex = /\[(\d)\]/
+	var refRegex = /\[(\d+)\]/
 	var existingLink = refRegex.test(lastLine)
 	if (existingLink == false){
 		return 1
