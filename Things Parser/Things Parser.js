@@ -1,76 +1,7 @@
-/*
-# Things Parser
-
-## Intro
-
-This script is designed to be used with [Drafts 5][1]. It takes each line of the current draft and turns it into a task in [Things 3][2]. It uses the [add-json command][3] to add all of the tasks in a single URL scheme call. It uses the [Chrono JS parser][7] for natural language date and time processing, rather than just relying on the more basic date and time recognition built into Things.
-
-It was inspired by [Federico Viticci’s][4] [article in MacStories][5] about the [workflow he built][6] to do the same thing.
-
-My script is fully compatible with his syntax:
-
-- # Project Name 
-- @Tag Name
-- ==Heading
-- ++Task note
-
-It is also compatible with his syntax for date and time strings:
-
-- \\\\natural date and time string
-
-However, the- ouble backslash is no longer required since Chrono can detect the date-time string wherever it is written in the line. The script also automatically detects whether or not a time has been written. If a date and time are written, it adds a task with that date and a reminder at that time. If only a date is written, it doesn’t add a reminder.
-
-In addition, my script adds the following syntax:
-
-- !natural language deadline string
-- *checklist item
-
-As with tag names in Federico’s workflow, multiple checklist items can also be entered.
-
-The automatic escaping of special characters is handled by Drafts, so there shouldn’t be any JSON errors. Syntax characters as detailed above can be used in other fields, as long as they are not immediately preceded by a space. So for example, 
-
-++Note containing email address: me@domain.com 
-
-is perfectly fine.
-
-## Examples
-
-Task name
-*Adds item to Inbox*
-
-Task name on Wednesday
-*Adds item to Upcoming with Wednesday as date*
-
-Task name on Wednesday at 6pm
-*Adds item to Upcoming with Wednesday as date and a reminder at 6pm*
-
-Task name on Wednesday at 6pm !Friday
-*Same as above with a deadline of Friday*
-
-Task name on Wednesday at 6pm #Project Name ==Heading @Tag 1 @Tag 2 ++Additional Note !Friday *first thing *second thing *third thing
-
-Adds item to project called “Project Name” under heading “Heading” with date of Wednesday, reminder at 6pm, two tags “Tag 1” and “Tag 2”, an additional note “Additional Note”, and a checklist with the following three items:
-
-* first thing
-* second thing
-* third thing
-
-[1]: https://agiletortoise.github.io/drafts-documentation/
-[2]: https://itunes.apple.com/gb/app/things-3-for-ipad/id904244226?mt=8&uo=4&at=1001lsF2
-[3]: https://support.culturedcode.com/customer/en/portal/articles/2803573#add-json
-[4]: https://www.twitter.com/viticci
-[5]: https://www.macstories.net/ios/things-automation-building-a-natural-language-parser-in-workflow/
-[6]: https://workflow.is/workflows/b852622a129a45ab81322b0003a7314a
-[7]: https://github.com/wanasit/chrono
-
-*/
-
-// A sprinkling of delicious regex
-// As is always the case with regex, it works, but I'm exactly sure how. 
 const tagDelimiter = "@"
 const projectDelimiter = "#"
-const newProjectDelimiter = "\\+#"
-const notesDelimiter = "\\+\\+"
+const newProjectDelimiter = "\\+"
+const notesDelimiter = "\/\/"
 const headingDelimiter = "\\=\\="
 const deadlineDelimiter = "\\!"
 const checklistDelimiter = "\\*"
@@ -85,18 +16,6 @@ const headingRegex = new RegExp(" " + headingDelimiter + "((.(?! " + tagDelimite
 const headingsRegex = new RegExp(" " + headingDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)", "g")
 const deadlineRegex = new RegExp(" " + deadlineDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)")
 const checklistRegex = new RegExp(" " + checklistDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)", "g")
-
-/*
-var tagsRegex = / @((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/g
-var titleRegex = /^(.(?! #| \+\+| @| \=\=| \!| \*))*\S/
-var projectRegex = / #((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
-var newProjectRegex = / \+((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
-var notesRegex = / \+\+((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
-var headingRegex = / \=\=((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
-var headingsRegex = / \=\=((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/g
-var deadlineRegex = / \!((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
-var checklistRegex = / \*((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/g
-*/
 
 // Formats JS date objects in the form 2018-03-06 or 2018-03-06@17:54 using Moment.js
 function thingsDateFormat(date, includeTime) {
@@ -142,7 +61,7 @@ function Block() {
 			if (!line.project && blockHeading.project) {
 				line.project = blockHeading.project
 			}
-			if (!line.heading && blockHeading.heading) {
+			if (!line.heading && blockHeading.heading && blockHeading.headings.length == 1) {
 				line.heading = blockHeading.heading
 			}
 		}
@@ -163,19 +82,19 @@ function Block() {
 			project.area = blockHeadingTask.list
 			project.tags = blockHeadingTask.tags
 			var headings = new Array()
-			while ((match = headingsRegex.exec(this.blockHeading().lineString)) != null) {
+			while ((match = headingsRegex.exec(this.blockHeading().inputString)) != null) {
 				var heading = TJSHeading.create()
 				heading.title = match[1].trim()
 				project.addHeading(heading)
 			}
 			for (index = 1; index < this.lines.length; index++) {
 				var line = this.lines[index]
-				if (line.newProject == null) {
+				if (!line.newProject) {
 					project.addTodo(line.convertToTask())
 				} else {
 					var newProject = TJSProject.create()
 					newProject.title = line.newProject
-					if (line.heading != null) {
+					if (line.heading) {
 						var newHeading = TJSHeading.create()
 						newHeading.title = line.heading
 						newProject.addHeading(newHeading)
@@ -217,7 +136,6 @@ function Line(inputString) {
 	const dateString = parsedDates.length > 0 ? parsedDates[0].text : ""
 	this.hasReminder = parsedDates.length > 0 ?  parsedDates[0].start.knownValues.hasOwnProperty("hour") : false
 	var lineMinusDates = lineMinusDeadline.replace(dateString, "").replace("\\\\", "").trim()
-	console.log(lineMinusDates)
 	if (titleRegex.test(lineMinusDates) && !blockHeadingRegex.test(lineMinusDates)) {
 		this.title = titleRegex.exec(lineMinusDates)[0].trim()
 		this.isBlockHeading = false
@@ -238,7 +156,11 @@ function Line(inputString) {
 	this.project = projectRegex.test(lineMinusDates) ? projectRegex.exec(lineMinusDates)[1].trim() : ""
 	this.newProject = newProjectRegex.test(lineMinusDates) ? newProjectRegex.exec(lineMinusDates)[1].trim() : ""
 	this.heading = headingRegex.test(lineMinusDates) ? headingRegex.exec(lineMinusDates)[1].trim() : ""
-	
+	this.headings = new Array()
+	while ((match = headingsRegex.exec(lineMinusDates)) != null) {
+		this.headings.push(match[1].trim())
+	}
+
 	this.convertToTask = function() {
 		task = TJSTodo.create()
 		task.title = this.title
@@ -274,7 +196,8 @@ function textProcessor(text) {
 
 function thingsCallback(block) {
 	var callback = CallbackURL.create()
-	callback.baseURL = block.createContainer().url
+	const container = block.createContainer()
+	callback.baseURL = container.url
 	var success = callback.open()
 	if (success) {
 		console.log("Success")
