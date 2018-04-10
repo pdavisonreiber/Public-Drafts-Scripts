@@ -18,7 +18,7 @@ It is also compatible with his syntax for date and time strings:
 
 - \\\\natural date and time string
 
-However, the double backslash is no longer required since Chrono can detect the date-time string wherever it is written in the line. The script also automatically detects whether or not a time has been written. If a date and time are written, it adds a task with that date and a reminder at that time. If only a date is written, it doesn’t add a reminder.
+However, the- ouble backslash is no longer required since Chrono can detect the date-time string wherever it is written in the line. The script also automatically detects whether or not a time has been written. If a date and time are written, it adds a task with that date and a reminder at that time. If only a date is written, it doesn’t add a reminder.
 
 In addition, my script adds the following syntax:
 
@@ -67,13 +67,36 @@ Adds item to project called “Project Name” under heading “Heading” with 
 
 // A sprinkling of delicious regex
 // As is always the case with regex, it works, but I'm exactly sure how. 
-var tagRegex = / @((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/g
+const tagDelimiter = "@"
+const projectDelimiter = "#"
+const newProjectDelimiter = "\\+#"
+const notesDelimiter = "\\+\\+"
+const headingDelimiter = "\\=\\="
+const deadlineDelimiter = "\\!"
+const checklistDelimiter = "\\*"
+
+const tagsRegex = new RegExp(" " + tagDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)", "g")
+const titleRegex = new RegExp("^(.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S")
+const blockHeadingRegex = new RegExp("^(" + tagDelimiter + "|" + projectDelimiter + "|" + newProjectDelimiter + "|" + notesDelimiter + "|" + headingDelimiter + "|" + deadlineDelimiter + "|" + checklistDelimiter + ")(.+)")
+const projectRegex = new RegExp(" " + projectDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)")
+const newProjectRegex = new RegExp(" " + newProjectDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)")
+const notesRegex = new RegExp(" " + notesDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)")
+const headingRegex = new RegExp(" " + headingDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)")
+const headingsRegex = new RegExp(" " + headingDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)", "g")
+const deadlineRegex = new RegExp(" " + deadlineDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)")
+const checklistRegex = new RegExp(" " + checklistDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)", "g")
+
+/*
+var tagsRegex = / @((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/g
 var titleRegex = /^(.(?! #| \+\+| @| \=\=| \!| \*))*\S/
 var projectRegex = / #((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
-var noteRegex = / \+\+((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
+var newProjectRegex = / \+((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
+var notesRegex = / \+\+((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
 var headingRegex = / \=\=((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
+var headingsRegex = / \=\=((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/g
 var deadlineRegex = / \!((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/
 var checklistRegex = / \*((.(?! #| \+\+| @| \=\=| \!| \*))*\S)/g
+*/
 
 // Formats JS date objects in the form 2018-03-06 or 2018-03-06@17:54 using Moment.js
 function thingsDateFormat(date, includeTime) {
@@ -83,6 +106,194 @@ function thingsDateFormat(date, includeTime) {
 		return moment(date).format("YYYY-MM-DD")
 	}
 }
+
+function Block() {
+	this.lines = new Array()
+	this.blockHeading = function() {
+		if (this.lines[0] && this.lines[0].isBlockHeading) {
+			return this.lines[0]
+		} else {
+			return null
+		}
+	}
+	
+	this.addLine = function(inputLine) {
+		var line = inputLine
+		var blockHeading = this.blockHeading()
+		if (blockHeading) {
+			if (!line.date && blockHeading.date) {
+				line.date = blockHeading.date
+			}
+			if (!line.deadline && blockHeading.deadline) {
+				line.deadline = blockHeading.deadline
+			}
+			if (!line.hasReminder && blockHeading.hasReminder) {
+				line.hasReminder = blockHeading.hasReminder
+			}
+			if (!line.notes && blockHeading.notes) {
+				line.notes = blockHeading.notes
+			}
+			if (line.checklist.length == 0 && blockHeading.checklist.length != 0) {
+				line.checklist = blockHeading.checklist
+			}
+			if (line.tags.length == 0 && blockHeading.tags.length != 0) {
+				line.tags = blockHeading.tags
+			}
+			if (!line.project && blockHeading.project) {
+				line.project = blockHeading.project
+			}
+			if (!line.heading && blockHeading.heading) {
+				line.heading = blockHeading.heading
+			}
+		}
+		this.lines.push(line)
+		console.log(JSON.stringify(line))
+	}
+	
+	this.createContainer = function () {
+		var projects = new Array()
+		var tasks = new Array()
+		if (this.blockHeading() && this.blockHeading().newProject) {
+			var project = TJSProject.create()
+			project.title = this.blockHeading().newProject
+			var blockHeadingTask = this.blockHeading().convertToTask()
+			project.notes = blockHeadingTask.notes
+			project.when = blockHeadingTask.when
+			project.deadline = blockHeadingTask.deadline
+			project.area = blockHeadingTask.list
+			project.tags = blockHeadingTask.tags
+			var headings = new Array()
+			while ((match = headingsRegex.exec(this.blockHeading().lineString)) != null) {
+				var heading = TJSHeading.create()
+				heading.title = match[1].trim()
+				project.addHeading(heading)
+			}
+			for (index = 1; index < this.lines.length; index++) {
+				var line = this.lines[index]
+				if (line.newProject == null) {
+					project.addTodo(line.convertToTask())
+				} else {
+					var newProject = TJSProject.create()
+					newProject.title = line.newProject
+					if (line.heading != null) {
+						var newHeading = TJSHeading.create()
+						newHeading.title = line.heading
+						newProject.addHeading(newHeading)
+					}
+					newProject.addTodo(line.convertToTask())
+					projects.push(newProject)
+				}
+			}
+			projects.push(project)
+		} else if (this.blockHeading()) {
+			for (index = 1; index < this.lines.length; index++) {
+				var line = this.lines[index]
+				tasks.push(line.convertToTask())
+			} 
+		} else {
+			for (index = 0; index < this.lines.length; index++) {
+				var line = this.lines[index]
+				tasks.push(line.convertToTask())
+			}
+		}
+		return TJSContainer.create(projects.concat(tasks))
+	}
+}
+
+function Line(inputString) {
+	this.inputString = inputString
+	if (blockHeadingRegex.test(inputString)) {
+		var lineString = " " + inputString
+		this.isBlockHeading = true
+	} else {
+		var lineString = inputString
+		this.isBlockHeading = false
+	}
+	const deadlineString = deadlineRegex.test(lineString) ? deadlineRegex.exec(lineString)[1] : ""
+	this.deadline = deadlineString ? chrono.parse(deadlineRegex.exec(lineString)[1])[0].start.date() : null
+	const lineMinusDeadline = this.deadline != null ? lineString.replace("!" + deadlineString, "") : lineString
+	const parsedDates = chrono.parse(lineMinusDeadline)
+	this.date = parsedDates.length > 0 ? parsedDates[0].start.date() : null
+	const dateString = parsedDates.length > 0 ? parsedDates[0].text : ""
+	this.hasReminder = parsedDates.length > 0 ?  parsedDates[0].start.knownValues.hasOwnProperty("hour") : false
+	var lineMinusDates = lineMinusDeadline.replace(dateString, "").replace("\\\\", "").trim()
+	console.log(lineMinusDates)
+	if (titleRegex.test(lineMinusDates) && !blockHeadingRegex.test(lineMinusDates)) {
+		this.title = titleRegex.exec(lineMinusDates)[0].trim()
+		this.isBlockHeading = false
+	} else {
+		this.title = ""
+		lineMinusDates = " " + lineMinusDates 
+		this.isBlockHeading = true
+	}
+	this.notes = notesRegex.test(lineMinusDates) ? notesRegex.exec(lineMinusDates)[1].trim() : ""
+	this.checklist = new Array()
+	while ((match = checklistRegex.exec(lineMinusDates)) != null) {
+		this.checklist.push(match[1].trim())
+	}
+	this.tags = new Array()
+	while ((match = tagsRegex.exec(lineMinusDates)) != null) {
+		this.tags.push(match[1].trim())
+	}
+	this.project = projectRegex.test(lineMinusDates) ? projectRegex.exec(lineMinusDates)[1].trim() : ""
+	this.newProject = newProjectRegex.test(lineMinusDates) ? newProjectRegex.exec(lineMinusDates)[1].trim() : ""
+	this.heading = headingRegex.test(lineMinusDates) ? headingRegex.exec(lineMinusDates)[1].trim() : ""
+	
+	this.convertToTask = function() {
+		task = TJSTodo.create()
+		task.title = this.title
+		task.when = thingsDateFormat(this.date, this.hasReminder)
+		task.deadline = thingsDateFormat(this.deadline, false)
+		task.notes = this.notes
+		for (let item of this.checklist) {
+			var checklistItem = TJSChecklistItem.create()
+			checklistItem.title = item
+			task.addChecklistItem(checklistItem)
+		}
+		task.tags = this.tags
+		task.list = this.project
+		task.heading = this.heading
+		return task
+	}
+}
+
+function textProcessor(text) {
+	blocks = new Array()
+	var paragraphs = text.split("\n\n")
+	for (var paragraph of paragraphs) {
+		var block = new Block()
+		var sentences = paragraph.split("\n")
+		for (var sentence of sentences) {
+			var line = new Line(sentence)
+			block.addLine(line)
+		}
+		blocks.push(block)
+	}
+	return blocks
+}
+
+function thingsCallback(block) {
+	var callback = CallbackURL.create()
+	callback.baseURL = block.createContainer().url
+	var success = callback.open()
+	if (success) {
+		console.log("Success")
+	}
+	else {
+		context.fail()
+	}
+}
+
+function processDraft() {
+	var blocks = textProcessor(draft.content)
+	for (var block of blocks) {
+		thingsCallback(block)
+	}
+}
+
+
+/*
+
 // Processes each line and turns it into a task object
 function processLine(line) {
 	var task = TJSTodo.create()
@@ -105,7 +316,7 @@ function processLine(line) {
 		var hasReminder = parsedDates[0].start.knownValues.hasOwnProperty("hour")
 		var date = thingsDateFormat(parsedDates[0].start.date(), hasReminder)
 		task.when = date
-		
+		a
 		// Remove parsed string from line
 		line = line.replace(parsedDates[0].text, "")
 		// Remove \\ from line for compatibility with Ticci's syntax
@@ -118,8 +329,8 @@ function processLine(line) {
 	}
 	
 	// Find notes
-	if (noteRegex.test(line)) {
-		task.notes = noteRegex.exec(line)[1].trim()
+	if (notesRegex.test(line)) {
+		task.notes = notesRegex.exec(line)[1].trim()
 
 	}
 	
@@ -135,7 +346,7 @@ function processLine(line) {
 	
 	// Find tags
 	var tags = []
-	while ((match = tagRegex.exec(line)) != null) {
+	while ((match = tagsRegex.exec(line)) != null) {
 		tags.push(match[1].trim())
 	}
 	task.tags = tags
@@ -198,6 +409,8 @@ function processDraft() {
 	}
 	thingsCallback(tasks)
 }
+
+*/
 
 // Chrono, minified, below:
 
