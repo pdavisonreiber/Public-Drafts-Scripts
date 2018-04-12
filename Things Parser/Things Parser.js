@@ -1,14 +1,40 @@
-const tagDelimiter = "@"
-const projectDelimiter = "#"
-const newProjectDelimiter = "\\+"
-const notesDelimiter = "\/\/"
-const headingDelimiter = "\\=\\="
-const deadlineDelimiter = "\\!"
-const checklistDelimiter = "\\*"
+const delimiters = {
+	tags: "@",
+	project: "#",
+	newProject: "\\+",
+	notes: "\/\/",
+	heading: "\\=\\=",
+	deadline: "\\!",
+	checklist: "\\*"
+}
 
-const tagsRegex = new RegExp(" " + tagDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)", "g")
+
+class Parser {
+	
+	constructor(data, delimiters) {
+		this.data = data
+		this.delimiters = delimiters
+	}
+	
+	function makeRegex() {
+		
+		var regex = new Object()
+		
+		const listOfDelimiters = this.delimiters.tag + "| " + this.delimiters.project + "| " + this.delimiters.newProject + "| " + this.delimiters.notes + "| " + this.delimiters.heading + "| " + this.delimiters.deadline + "| " + this.delimiters.checklist
+		
+		const regexMaker = (delimiterType, flag) => new RegExp(" " + delimiterType + "((.(?!" + listOfDelimiters + "))*\\S", flag)
+		
+		regex.tags = regexMaker(delimeter.tags, "g")
+		regex.project = regexMaker(delimeter.project)
+		regex.newProject = regexMaker(delimeter.newProject)
+		regex.notes = regexMaker(delimeter.notes)
+		regex.heading = regexMaker(delimeter.heading)
+		regex.headings = regexMaker(delimeter.headings, "g")
+		regex.deadline = regexMaker(delimeter.deadline)
+		regex.checklist = regexMaker(delimeter.checklist)
+		
+		const tagsRegex = new RegExp(" " + tagDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)", "g")
 const titleRegex = new RegExp("^(.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S")
-const blockHeadingRegex = new RegExp("^(" + tagDelimiter + "|" + projectDelimiter + "|" + newProjectDelimiter + "|" + notesDelimiter + "|" + headingDelimiter + "|" + deadlineDelimiter + "|" + checklistDelimiter + ")(.+)")
 const projectRegex = new RegExp(" " + projectDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)")
 const newProjectRegex = new RegExp(" " + newProjectDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)")
 const notesRegex = new RegExp(" " + notesDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)")
@@ -16,6 +42,11 @@ const headingRegex = new RegExp(" " + headingDelimiter + "((.(?! " + tagDelimite
 const headingsRegex = new RegExp(" " + headingDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)", "g")
 const deadlineRegex = new RegExp(" " + deadlineDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)")
 const checklistRegex = new RegExp(" " + checklistDelimiter + "((.(?! " + tagDelimiter + "| " + projectDelimiter + "| " + newProjectDelimiter + "| " + notesDelimiter + "| " + headingDelimiter + "| " + deadlineDelimiter + "| " + checklistDelimiter + "))*\\S)", "g")
+
+		
+	}
+}
+
 
 // Formats JS date objects in the form 2018-03-06 or 2018-03-06@17:54 using Moment.js
 function thingsDateFormat(date, includeTime) {
