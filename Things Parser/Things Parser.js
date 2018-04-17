@@ -373,6 +373,10 @@ class Parser {
 		if (success) { console.log("Success") } 
 		else { context.fail() }
 	}
-	
-	
+
 }
+
+parser = new Parser(delimiters)
+parser.processText(draft.content)
+parser.sendToThings()
+
