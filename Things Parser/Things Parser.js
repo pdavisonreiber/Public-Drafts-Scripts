@@ -1,3 +1,6 @@
+// Things Parser
+
+// Delimiters can be customised, but care should be taken to escape any characters reserved by regex.
 const delimiters = {
 	tags: "@",
 	project: "#",
@@ -12,20 +15,9 @@ class Line {
 	
 	constructor(lineString) {
 		this.lineString = lineString
-		this.deadline = null
-		this.date = null
-		this.hasReminder = false
-		this.notes = ""
-		this.checklist = new Array()
-		this.tags = new Array()
-		this.project = ""
-		this.newProject = ""
-		this.heading = ""
-		this.headings = new Array()
-		this.isBlockHeading = false
 	}
 	
-	isBlockHeading(parser) {
+	checkIfBlockHeading(parser) {
 		
 		const isOnlyDates = (this.lineMinusDates == "")
 		const beginsWithDelimiter = (
@@ -42,42 +34,60 @@ class Line {
 		
 	}
 	
-	parse(parser) {
+	parseLine(parser) {
 		
-		const deadlineString = parser.regex.deadline.test(this.lineString) ? parser.regex.deadline.exec(this.lineString)[1] : ""
-		this.deadline = deadlineString ? chrono.parse(parser.regex.deadline.exec(lineString)[1])[0].start.date() : null
+		const lineStringWithSpace = " " + this.lineString
 		
-		const lineMinusDeadline = this.deadline != null ? this.lineString.replace("!" + deadlineString, "") : this.lineString
+		const deadlineString = parser.regex.deadline.test(lineStringWithSpace) ? parser.regex.deadline.exec(lineStringWithSpace)[1] : ""
+		this.deadline = deadlineString ? chrono.parse(parser.regex.deadline.exec(lineStringWithSpace)[1])[0].start.date() : null
+		
+		const lineMinusDeadline = this.deadline != null ? lineStringWithSpace.replace("!" + deadlineString, "") : lineStringWithSpace
 	
 		const parsedDates = chrono.parse(lineMinusDeadline)
+		this.parsedDate = parsedDates.length > 0? parsedDates[0] : null
 		this.date = parsedDates.length > 0 ? parsedDates[0].start.date() : null
 		const dateString = parsedDates.length > 0 ? parsedDates[0].text : ""
 		
-		this.hasReminder = parsedDates.length > 0 ?  parsedDates[0].start.knownValues.hasOwnProperty("hour") : false
-		
 		this.lineMinusDates = lineMinusDeadline.replace(dateString, "").trim()
 		
-		this.title = this.isBlockHeading(parser) ? null : parser.regex.title.exec(this.lineMinusDates)[0].trim()
+		this.isBlockHeading = this.checkIfBlockHeading(parser)
 		
-		this.notes = parser.regex.notes.test(this.lineMinusDates) ? parser.regex.notes.exec(this.lineMinusDates)[1].trim() : ""
+		const lineMinusDatesWithSpace = " " + this.lineMinusDates
 		
-		while ((match = parser.regex.checklist.exec(this.lineMinusDates)) != null) {
+		this.title = this.isBlockHeading ? null : parser.regex.title.exec(lineMinusDatesWithSpace)[0].trim()
+		
+		this.notes = parser.regex.notes.test(lineMinusDatesWithSpace) ? parser.regex.notes.exec(lineMinusDatesWithSpace)[1].trim() : ""
+		
+		this.checklist = new Array()
+		var match = parser.regex.checklist.exec(lineMinusDatesWithSpace)
+		while (match != null) {
 			this.checklist.push(match[1].trim())
+			match = parser.regex.checklist.exec(lineMinusDatesWithSpace)
 		}
-		
-		while ((match = parser.regex.tags.exec(this.lineMinusDates)) != null) {
+			
+		this.tags = new Array() 
+		var match = parser.regex.tags.exec(lineMinusDatesWithSpace)
+		while (match != null) {
 			this.tags.push(match[1].trim())
+			match = parser.regex.tags.exec(lineMinusDatesWithSpace)
 		}
 		
-		this.project = parser.regex.project.test(this.lineMinusDates) ? parser.regex.project.exec(this.lineMinusDates)[1].trim() : ""
+		this.project = parser.regex.project.test(lineMinusDatesWithSpace) ? parser.regex.project.exec(lineMinusDatesWithSpace)[1].trim() : ""
 		
-		this.newProject = parser.regex.newProject.test(this.lineMinusDates) ? parser.regex.newProject.exec(this.lineMinusDates)[1].trim() : ""
+		this.newProject = parser.regex.newProject.test(lineMinusDatesWithSpace) ? parser.regex.newProject.exec(lineMinusDatesWithSpace)[1].trim() : ""
 		
-		this.heading = parser.regex.heading.test(this.lineMinusDates) ? parser.regex.heading.exec(this.lineMinusDates)[1].trim() : ""
+		this.heading = parser.regex.heading.test(lineMinusDatesWithSpace) ? parser.regex.heading.exec(lineMinusDatesWithSpace)[1].trim() : ""
 		
-		while ((match = parser.regex.headings.exec(this.lineMinusDates)) != null) {
+		this.headings = new Array()
+		var match = parser.regex.headings.exec(lineMinusDatesWithSpace)
+		while (match != null) {
 			this.headings.push(match[1].trim())
+			match = parser.regex.headings.exec(lineMinusDatesWithSpace)
 		}
+	}
+	
+	get hasReminder() {
+		return this.parsedDate ? this.parsedDate.start.knownValues.hasOwnProperty("hour") : false
 	}
 	
 	convertToTask() {
@@ -90,13 +100,13 @@ class Line {
 			}
 		}
 		
-		task = TJSTodo.create()
+		var task = TJSTodo.create()
 		task.title = this.title
 		task.when = thingsDateFormat(this.date, this.hasReminder)
 		task.deadline = thingsDateFormat(this.deadline, false)
 		task.notes = this.notes
 		
-		for (let item of this.checklist) {
+		for (var item of this.checklist) {
 			var checklistItem = TJSChecklistItem.create()
 			checklistItem.title = item
 			task.addChecklistItem(checklistItem)
@@ -115,12 +125,6 @@ class Block {
 	
 	constructor() {
 		this._lines = new Array()
-		this.tasks = new Array()
-		this.projects = new Array()
-	}
-	
-	get todoObjects() {
-		return this.projects.concat(this.tasks)
 	}
 	
 	get blockHeading() {
@@ -137,16 +141,14 @@ class Block {
 		
 		var lineWithInheritedProperties = line
 
-		if (this.blockHeading) {
+		if (this.blockHeading && !this.blockHeading.newProject) {
 			if (!line.date && this.blockHeading.date) {
 				lineWithInheritedProperties.date = this.blockHeading.date
 			}
 			if (!line.deadline && this.blockHeading.deadline) {
 				lineWithInheritedProperties.deadline = this.blockHeading.deadline
 			}
-			if (!line.hasReminder && this.blockHeading.hasReminder) {
-				lineWithInheritedProperties.hasReminder = this.blockHeading.hasReminder
-			}
+			
 			if (!line.notes && this.blockHeading.notes) {
 				lineWithInheritedProperties.notes = this.blockHeading.notes
 			}
@@ -165,7 +167,6 @@ class Block {
 		}
 		
 		this._lines.push(lineWithInheritedProperties)
-		console.log(JSON.stringify(lineWithInheritedProperties))
 		
 	}
 	
@@ -174,9 +175,10 @@ class Block {
 		console.assert(line.newProject)
 		var myTJSProject = TJSProject.create()
 		myTJSProject.title = line.newProject
+		myTJSProject.area = line.project
 		
 		if (line.heading) {
-			myTJSHeading = TJSHeading.create()
+			var myTJSHeading = TJSHeading.create()
 			myTJSHeading.title = line.heading
 			myTJSProject.addHeading(myTJSHeading)
 		}
@@ -189,22 +191,22 @@ class Block {
 	processHeadings(lines) {
 		
 		var headings = new Array()
-		headings[0] = null
+		headings[0] = "nullHeading"
 		
 		var mapping = new Object()
-		mapping[null] = new Array()
+		mapping["nullHeading"] = new Array()
 		
-		while ((match = headingsRegex.exec(this.blockHeading.lineString)) != null) {
-				let heading = match[1].trim()
-				headings.push(headingTitle)
+		var match = parser.regex.headings.exec(this.blockHeading.lineString)
+		while (match != null) {
+				var heading = match[1].trim()
+				headings.push(heading)
 				mapping[heading] = new Array()
+				match = parser.regex.headings.exec(this.blockHeading.lineString)
 		}
 		
 		for (let line of lines) {
-			if (!line.newProject) {
-				break
-			} else if (!line.heading) {
-				mapping[null].push(line)
+			if (!line.heading) {
+				mapping["nullHeading"].push(line)
 			} else {
 				mapping[line.heading].push(line)
 			}
@@ -221,30 +223,26 @@ class Block {
 		var myTJSProject = TJSProject.create()
 		myTJSProject.title = this.blockHeading.newProject
 		
-		var blockHeadingTask = this.blockHeading().convertToTask()
+		var blockHeadingTask = this.blockHeading.convertToTask()
 		myTJSProject.notes = blockHeadingTask.notes
 		myTJSProject.when = blockHeadingTask.when
 		myTJSProject.deadline = blockHeadingTask.deadline
 		myTJSProject.area = blockHeadingTask.list
 		myTJSProject.tags = blockHeadingTask.tags
 		
-		function hasOwnNewProject(line) {
-			return line.newProject == ""
-		}
-		
-		linesWithOwnNewProject = this.lines.filter(hasOwnNewProject)
-		linesWithoutOwnNewProject = this.lines.filter(!hasOwnNewProject)
+		const linesWithOwnNewProject = this.lines.filter(line => line.newProject != "")
+		const linesWithoutOwnNewProject = this.lines.filter(line => !line.newProject)
 		
 		for (let line of linesWithOwnNewProject) {
-			newProjects.push(createNewProjectForSingleLine(line))
+			myTJSProjects.push(this.createNewProjectForSingleLine(line))
 		}
 		
-		var processedHeadings = processHeadings(linesWithoutOwnNewProject)
+		var processedHeadings = this.processHeadings(linesWithoutOwnNewProject)
 		var headings = processedHeadings.headings
 		var headingsMapping = processedHeadings.headingsMapping
 		
-		for (let line of headingsMapping[null]) {
-			myTJSTodo = line.convertToTask()
+		for (let line of headingsMapping["nullHeading"]) {
+			var myTJSTodo = line.convertToTask()
 			myTJSProject.addTodo(myTJSTodo)
 		}
 		
@@ -256,8 +254,8 @@ class Block {
 			myTJSHeading.title = heading
 			myTJSProject.addHeading(myTJSHeading)
 			
-			for (let lines of headingsMapping[heading]) {
-				myTJSTodo = TJSTodo.create()
+			for (let line of headingsMapping[heading]) {
+				myTJSTodo = line.convertToTask()
 				myTJSProject.addTodo(myTJSTodo)
 			}
 		}
@@ -269,18 +267,23 @@ class Block {
 	
 	makeTasksAndProjects() {
 		
-		if (blockHeading && blockHeading.newProject) {
-			return createNewProjects()
+		var TJSTodos = new Array()
+		var TJSProjects = new Array()
+		
+		if (this.blockHeading && this.blockHeading.newProject) {
+			return this.createNewProjects()
 		} else {
-			var myTJSTasksAndProjects = new Array()
-			for (let line of this.lines) {
+			for (var line of this.lines) {
 				if (line.newProject) {
-					myTJSTasksAndProjects.push(createNewProjectForSingleLine(line))
+					TJSProjects.push(this.createNewProjectForSingleLine(line))
 				} else {
-					myTJSTasksAndProjects.push(line.convertToTask())
+					TJSTodos.push(line.convertToTask())
 				}
 			}
+		
 		}
+		
+		return TJSTodos.concat(TJSProjects)
 		
 	}
 	
@@ -289,8 +292,9 @@ class Block {
 class Parser {
 	
 	constructor(delimiters) {
-		this._delimiters = delimiters
+		this._delimiters = new Object()
 		this.regex = new Object()
+		this.delimiters = delimiters
 		this.blocks = new Array()
 	}
 	
@@ -307,18 +311,18 @@ class Parser {
 			value.deadline + "| " + 
 			value.checklist
 		
-		const regexMaker = (delimiterType, flag) => new RegExp(" " + delimiterType + "((.(?! " + listOfDelimiters + "))*\\S", flag)
+		const regexMaker = (delimiterType, flag) => new RegExp(" " + delimiterType + "((.(?! " + listOfDelimiters + "))*\\S)", flag)
 		
 		this.regex.tags = regexMaker(value.tags, "g")
 		this.regex.project = regexMaker(value.project)
 		this.regex.newProject = regexMaker(value.newProject)
 		this.regex.notes = regexMaker(value.notes)
 		this.regex.heading = regexMaker(value.heading)
-		this.regex.headings = regexMaker(value.headings, "g")
+		this.regex.headings = regexMaker(value.heading, "g")
 		this.regex.deadline = regexMaker(value.deadline)
-		this.regex.checklist = regexMaker(value.checklist)
+		this.regex.checklist = regexMaker(value.checklist, "g")
 		
-		this.regex.title = newRegexp("^(.(?! " + listofDelimiters + "))*\\S")
+		this.regex.title = new RegExp("^(.(?! " + listOfDelimiters + "))*\\S")
 		
 	}
 	
@@ -329,7 +333,7 @@ class Parser {
 	processText(text) {
 		
 		function notJustWhitespace(string) {
-			notJustWhitespaceRegex = /\S/
+			const notJustWhitespaceRegex = /\S/
 			return notJustWhitespaceRegex.test(string)
 		} 
 		
@@ -342,9 +346,9 @@ class Parser {
 		
 			for (let sentence of sentences) {
 				
-				if (notJustWhiteSpace(sentence) {
+				if (notJustWhitespace(sentence)) {
 					var line = new Line(sentence)
-					line.parse(this)
+					line.parseLine(this)
 					block.addLine(line)
 				}
 			}
@@ -359,19 +363,24 @@ class Parser {
 		
 		var items = new Array()
 		
-		for (let block in this.blocks) {
-			items.concat(block.makeTasksAndProjects())
+		for (var block of this.blocks) {
+			console.log("block: " + JSON.stringify(block))
+			items = items.concat(block.makeTasksAndProjects())
 		}
 		
-		const myTJSContainer = TJSContainer.create(items)
+		var myTJSContainer = TJSContainer.create(items)
 		
 		var callback = CallbackURL.create()
-		callback.baseURL = container.url
+		callback.baseURL = myTJSContainer.url
 	
 		var success = callback.open()
 		
-		if (success) { console.log("Success") } 
-		else { context.fail() }
+		if (success) { 
+			console.log("Success") 
+		} else { 
+			context.fail() 
+		}
+		
 	}
 
 }
@@ -379,4 +388,9 @@ class Parser {
 parser = new Parser(delimiters)
 parser.processText(draft.content)
 parser.sendToThings()
+
+
+
+
+
 
