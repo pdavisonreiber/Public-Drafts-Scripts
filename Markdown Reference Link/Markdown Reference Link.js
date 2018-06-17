@@ -28,7 +28,7 @@ function nextLinkNumber() {
 	while (!nonWhitespaceRegex.test(lastLine)){
 		lastLine = lines.pop()
 	}	
-	var refRegex = /\[(\d+)\]/
+	var refRegex = /\[\^*(\d+)\]/
 	var existingLink = refRegex.test(lastLine)
 	if (existingLink == false){
 		return 1
@@ -71,7 +71,7 @@ if (selection.length == 0) {
 	// Add reference to end of document
 	if (isUrl(clip)) {
 		// If URL was added, move cursor back to after reference link in text
-		editor.setSelectedRange(selectedRange[0] + selectedRange[1] + 5, 0)
+		editor.setSelectedRange(selectedRange[0] + selectedRange[1] + 4 + refLinkNumber.toString().length, 0)
 	} else {
 		// If no URL was added, move cursor to URL position in reference at end of document
 		editor.setSelectedRange(editor.getText().length, 0)
