@@ -1,3 +1,6 @@
+// Enter default alarm time for reminders in the form 15:32.
+const defaultTime = "12:00";
+
 // Change to "GB" to interpret dates assuming dd/mm/yy format.
 const locale = "US";
 
@@ -68,8 +71,14 @@ workingString = workingString.replace("/"+ listString, "");
 	reminder.title = titleString;
 	
 	if (dueDateStringExists) {
-		reminder.dueDate = result.start.date();
-		var alarm = Alarm.alarmWithDate(result.start.date());
+		reminderDueDate = result.start.date();
+		if (!result.start.knownValues.hasOwnProperty("hour")) {
+			var defaultHour = parseInt(defaultTime.split(":")[0]);
+			var defaultMinute = parseInt(defaultTime.split(":")[1]);
+			reminderDueDate.setHours(defaultHour, defaultMinute)
+		}
+		reminder.dueDate = reminderDueDate;
+		var alarm = Alarm.alarmWithDate(reminderDueDate);
 		reminder.addAlarm(alarm)
 	}
 	
