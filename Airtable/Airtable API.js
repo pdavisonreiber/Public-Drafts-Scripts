@@ -218,7 +218,6 @@ class Table {
 		this.base = base;
 		this._pulledRecords = new Array();
 		this._unPushedRecords = new Array();
-		this.fieldLinks = new Object();
 		this.lastError = undefined;
 		this._idToRecordMap = new Object();
 		base.tables.push(this);
@@ -234,6 +233,13 @@ class Table {
 		return this._pulledRecords.concat(this._unPushedRecords);
 	}
 	
+	get fields() {
+		if (this._pulledRecords.length > 0) {
+			return Object.keys(this._pulledRecords[0]._fields);
+		} else {
+			return undefined;
+		}
+	}
 	_pullData() {
 		let httpRequest = new HTTPRequest(this);
 		let success = httpRequest.get();
