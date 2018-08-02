@@ -220,8 +220,46 @@ class Record {
 			return false;
 		}
 	}
+	
+	static selectRecords(records, field, options = {}) {
+		let title = options.title || "Select Records";
+		let message = options.message || "";
+		let type = options.type || "selectMultiple";
+		let filter = options.filter || function () { return true };
+		
+		let prompt = Prompt.create();
+		prompt.title = title;
+		prompt.message = message;
+		switch (type) {
+			case "selectMultiple":
+			case "selectOne":
+				let fieldToRecordMap = {};
+				records.forEach(record => { fieldToRecordMap[record._fields[field]] = record });
+				let recordFields = records.filter(filter).map(record => record._fields[field]).sort((a, b) => a.localeCompare(b));
+				prompt.addSelect("selectedRecords", "", recordFields, [], type == "selectMultiple");
+				prompt.addButton("OK");
+				let selected = prompt.show();
+				if (selected) {
+					return prompt.fieldValues["selectedRecords"].map(field => fieldToRecordMap[field]);
+				} else {
+					context.cancel();
+				}
+				break;
+			case "selectButtons":
+				let idToRecordMap = {};
+				records.forEach(record => { idToRecordMap[record.id] = record });
+				records.filter(filter).sort((a, b) => a._fields[field].localeCompare(b._fields[field])).forEach(record => { prompt.addButton(record._fields[field], record.id) });
+				let selected2 = prompt.show();
+				if (selected2) {
+					return [idToRecordMap[prompt.buttonPressed]];
+				} else {
+					context.cancel();
+				}
+				break;
+		}
+	}
 }
-
+	
 class Table {
 	constructor(name, base) {
 		this.name = name;
