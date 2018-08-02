@@ -154,6 +154,7 @@ class Record {
 	constructor() {
 		this.id = undefined;
 		this.table = undefined;
+		this.createdTime = undefined;
 		this._fields = new Object();
 		this._changedFields = new Object();
 	}
@@ -181,13 +182,21 @@ class Record {
 	}
 	
 	getLinkedRecords(field) {
-		this._fields[field].map(this.table.base.getRecordWithID);
+		return this._fields[field].map(id => this.table.base.getRecordWithID(id));
+	}
+	
+	linkRecord(field, record) {
+		this._fields[field].push(record.id);
+		this._changedFields[field] = this._fields[field];
 	}
 	
 	_pushToTable() {
 		let httpRequest = new HTTPRequest(this.table);
 		let success = httpRequest.post(this);
 		this._changedFields = {};
+		this.id = httpRequest.responseData.id;
+		this._fields = httpRequest.responseData.fields;
+		this.createdTime = new Date(httpRequest.responseData.createdTime);
 		return httpRequest;
 	}
 	
@@ -198,10 +207,11 @@ class Record {
 			
 			if (success) {
 				this._changedFields = {};
-				let tableSuccess = this.table.update();
+				this._fields = httpRequest.responseData.fields;
+				return true;
+			} else {
+				return false;
 			}
-			
-			return success && tableSuccess;
 			
 		} else if (this.table) {
 			alert("ERROR: table must be updated before record can be updated");
