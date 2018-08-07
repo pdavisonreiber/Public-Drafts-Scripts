@@ -152,11 +152,38 @@ class ATHTTPRequest {
 class ATRecord {
 	
 	constructor() {
-		this.id = undefined;
-		this.table = undefined;
-		this.createdTime = undefined;
+		this._id = undefined;
+		this._table = undefined;
+		this._createdTimed = undefined;
 		this._fields = new Object();
 		this._changedFields = new Object();
+	}
+	
+	get id() {
+		return this._id;
+	}
+	
+	set id(value) {
+		app.displayErrorMessage("The id property of ATRecord is read only");
+		contex.cancel();
+	}
+	
+	get table() {
+		return this._table;
+	}
+	
+	set table(value) {
+		app.displayErrorMessage("The id property of ATRecord is read only");
+		contex.cancel();
+	}
+	
+	get createdTime() {
+		return this._createdTime;
+	}
+	
+	set createdTime(value) {
+		app.displayErrorMessage("The id property of ATRecord is read only");
+		contex.cancel();
 	}
 	
 	static create() {
@@ -165,8 +192,8 @@ class ATRecord {
 	
 	static _createFromData(data, table) {
 		let record = new ATRecord();
-		record.id = data.id;
-		record.createdTime = new Date(data.createdTime);
+		record._id = data.id;
+		record._createdTimed = new Date(data._createdTimed);
 		record._fields = data.fields;
 		record.table = table;
 		return record;
@@ -182,7 +209,7 @@ class ATRecord {
 	}
 	
 	getLinkedRecords(field) {
-		return this._fields[field].map(id => this.table.base.getRecordWithID(id));
+		return this._fields[field].map(id => this._table.base.getRecordWithID(id));
 	}
 	
 	linkRecord(field, record) {
@@ -191,18 +218,18 @@ class ATRecord {
 	}
 	
 	_pushToTable() {
-		let httpRequest = new ATHTTPRequest(this.table);
+		let httpRequest = new ATHTTPRequest(this._table);
 		let success = httpRequest.post(this);
 		this._changedFields = {};
-		this.id = httpRequest.responseData.id;
+		this._id = httpRequest.responseData.id;
 		this._fields = httpRequest.responseData.fields;
-		this.createdTime = new Date(httpRequest.responseData.createdTime);
+		this._createdTimed = new Date(httpRequest.responseData.createdTime);
 		return httpRequest;
 	}
 	
 	update() {
-		if (this.table && this.id) {
-			let httpRequest = new ATHTTPRequest(this.table);
+		if (this._table && this._id) {
+			let httpRequest = new ATHTTPRequest(this._table);
 			let success = httpRequest.patch(this);
 			
 			if (success) {
@@ -213,7 +240,7 @@ class ATRecord {
 				return false;
 			}
 			
-		} else if (this.table) {
+		} else if (this._table) {
 			alert("ERROR: table must be updated before record can be updated");
 		} else {
 			alert("ERROR: record not yet added to table");
@@ -222,7 +249,7 @@ class ATRecord {
 	}
 	
 	static selectRecords(records, field, options = {}) {
-		let title = options.title || "Select ATRecords";
+		let title = options.title || "Select Records";
 		let message = options.message || "";
 		let type = options.type || "selectMultiple";
 		let filter = options.filter || function () { return true };
@@ -247,8 +274,8 @@ class ATRecord {
 				break;
 			case "selectButtons":
 				let idToRecordMap = {};
-				records.forEach(record => { idToRecordMap[record.id] = record });
-				records.filter(filter).sort((a, b) => a._fields[field].localeCompare(b._fields[field])).forEach(record => { prompt.addButton(record._fields[field], record.id) });
+				records.forEach(record => { idToRecordMap[record._id] = record });
+				records.filter(filter).sort((a, b) => a._fields[field].localeCompare(b._fields[field])).forEach(record => { prompt.addButton(record._fields[field], record._id) });
 				let selected2 = prompt.show();
 				if (selected2) {
 					return [idToRecordMap[prompt.buttonPressed]];
@@ -262,8 +289,8 @@ class ATRecord {
 	
 class ATTable {
 	constructor(name, base) {
-		this.name = name;
-		this.base = base;
+		this._name = name;
+		this._base = base;
 		this._pulledRecords = new Array();
 		this._unPushedRecords = new Array();
 		this.lastError = undefined;
@@ -271,6 +298,24 @@ class ATTable {
 		base._tables.push(this);
 		this._pullData();
 		this._mapIDsToRecords()
+	}
+	
+	get name() {
+		return this._name;
+	}
+	
+	set name(value) {
+		app.displayErrorMessage("The name property of ATTable is read only");
+		contex.cancel();
+	}
+	
+	get base() {
+		return this._base;
+	}
+	
+	set base(value) {
+		app.displayErrorMessage("The base property of ATTable is read only");
+		contex.cancel();
 	}
 	
 	static create(name, base){
@@ -354,7 +399,7 @@ class ATTable {
 
 class ATBase {
 	constructor(name) {
-		this.name = name;
+		this._name = name;
 		this._tables = new Array();
 		this._authorize();
 	}
@@ -373,7 +418,7 @@ class ATBase {
 	}
 	
 	_authorize() {
-		let credential = Credential.create("Airtable (" + this.name + ")", "Enter base info");
+		let credential = Credential.create("Airtable (" + this._name + ")", "Enter base info");
 		credential.addTextField("endpoint", "Endpoint");
 		credential.addPasswordField("apiKey", "API key");
 		credential.authorize();
