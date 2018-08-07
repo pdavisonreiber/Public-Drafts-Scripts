@@ -1,4 +1,4 @@
-class URL {
+class ATURL {
 	constructor(baseURL) {
 		this.baseURL = baseURL;
 		this.parameters = {};
@@ -25,7 +25,7 @@ class URL {
 	
 }
 
-class HTTPRequest {
+class ATHTTPRequest {
 	constructor(table) {
 		this.table = table;
 		this.responseData = undefined;
@@ -87,7 +87,7 @@ class HTTPRequest {
 	
 	get(options = {}) {
 		let http = HTTP.create();
-		let url = new URL("https://api.airtable.com/v0/" + this.table.base._endpoint + "/" + encodeURIComponent(this.table.name));
+		let url = new ATURL("https://api.airtable.com/v0/" + this.table.base._endpoint + "/" + encodeURIComponent(this.table.name));
 		url.parameters = options;
 		let response = http.request({
 			"url": url.constructURL(),
@@ -98,7 +98,7 @@ class HTTPRequest {
 		if (response.success) {
 			this.responseData = JSON.parse(response.responseText);
 		} else {
-			this.error = HTTPRequest._errorMessage(response);
+			this.error = ATHTTPRequest._errorMessage(response);
 			this.table.lastError = this.error;
 			app.displayErrorMessage(this.error);
 		}
@@ -108,18 +108,18 @@ class HTTPRequest {
 	
 	post(record) {
 		let http = HTTP.create();
-		let url = new URL("https://api.airtable.com/v0/" + this.table.base._endpoint + "/" + encodeURIComponent(this.table.name));
+		let url = new ATURL("https://api.airtable.com/v0/" + this.table.base._endpoint + "/" + encodeURIComponent(this.table.name));
 		let response = http.request({
 			"url": url.constructURL(),
 			"method": "POST",
-			"data": HTTPRequest._createPostData(record),
+			"data": ATHTTPRequest._createPostData(record),
 			"headers": {"Authorization": "Bearer " + this.table.base._apiKey, "Content-type": "application/json"}
 		});
 		
 		if (response.success) {
 			this.responseData = JSON.parse(response.responseText);
 		} else {
-			this.error = HTTPRequest._errorMessage(response);
+			this.error = ATHTTPRequest._errorMessage(response);
 			this.table.lastError = this.error;
 			app.displayErrorMessage(this.error);
 		}
@@ -129,18 +129,18 @@ class HTTPRequest {
 	
 	patch(record) {
 		let http = HTTP.create();
-		let url = new URL("https://api.airtable.com/v0/" + this.table.base._endpoint + "/" + encodeURIComponent(this.table.name) + "/" + record.id);
+		let url = new ATURL("https://api.airtable.com/v0/" + this.table.base._endpoint + "/" + encodeURIComponent(this.table.name) + "/" + record.id);
 		let response = http.request({
 			"url": url.constructURL(),
 			"method": "PATCH",
-			"data": HTTPRequest._createPatchData(record),
+			"data": ATHTTPRequest._createPatchData(record),
 			"headers": {"Authorization": "Bearer " + this.table.base._apiKey, "Content-type": "application/json"}
 		});
 		
 		if (response.success) {
 			this.responseData = JSON.parse(response.responseText);
 		} else {
-			this.error = HTTPRequest._errorMessage(response);
+			this.error = ATHTTPRequest._errorMessage(response);
 			this.table.lastError = this.error;
 			app.displayErrorMessage(this.error);
 		}
@@ -149,7 +149,7 @@ class HTTPRequest {
 	}
 }
 
-class Record {
+class ATRecord {
 	
 	constructor() {
 		this.id = undefined;
@@ -160,11 +160,11 @@ class Record {
 	}
 	
 	static create() {
-		return new Record();
+		return new ATRecord();
 	}
 	
 	static _createFromData(data, table) {
-		let record = new Record();
+		let record = new ATRecord();
 		record.id = data.id;
 		record.createdTime = new Date(data.createdTime);
 		record._fields = data.fields;
@@ -191,7 +191,7 @@ class Record {
 	}
 	
 	_pushToTable() {
-		let httpRequest = new HTTPRequest(this.table);
+		let httpRequest = new ATHTTPRequest(this.table);
 		let success = httpRequest.post(this);
 		this._changedFields = {};
 		this.id = httpRequest.responseData.id;
@@ -202,7 +202,7 @@ class Record {
 	
 	update() {
 		if (this.table && this.id) {
-			let httpRequest = new HTTPRequest(this.table);
+			let httpRequest = new ATHTTPRequest(this.table);
 			let success = httpRequest.patch(this);
 			
 			if (success) {
@@ -222,7 +222,7 @@ class Record {
 	}
 	
 	static selectRecords(records, field, options = {}) {
-		let title = options.title || "Select Records";
+		let title = options.title || "Select ATRecords";
 		let message = options.message || "";
 		let type = options.type || "selectMultiple";
 		let filter = options.filter || function () { return true };
@@ -260,7 +260,7 @@ class Record {
 	}
 }
 	
-class Table {
+class ATTable {
 	constructor(name, base) {
 		this.name = name;
 		this.base = base;
@@ -274,7 +274,7 @@ class Table {
 	}
 	
 	static create(name, base){
-		return new Table(name, base);
+		return new ATTable(name, base);
 	}
 	
 	get records() {
@@ -289,12 +289,12 @@ class Table {
 		}
 	}
 	_pullData() {
-		let httpRequest = new HTTPRequest(this);
+		let httpRequest = new ATHTTPRequest(this);
 		let success = httpRequest.get();
 		
 		if (success) {
 			let rawData = httpRequest.responseData.records;
-			this._pulledRecords = rawData.map(rec => Record._createFromData(rec, this));
+			this._pulledRecords = rawData.map(rec => ATRecord._createFromData(rec, this));
 			
 			while (httpRequest.responseData.hasOwnProperty("offset")) {
 				let offset = httpRequest.responseData.offset;
@@ -341,7 +341,7 @@ class Table {
 	}
 }
 
-class Base {
+class ATBase {
 	constructor(name) {
 		this.name = name;
 		this.tables = new Array();
@@ -349,7 +349,7 @@ class Base {
 	}
 	
 	static create(name) {
-		return new Base(name);
+		return new ATBase(name);
 	}
 	
 	_authorize() {
