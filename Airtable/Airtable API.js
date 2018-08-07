@@ -268,7 +268,7 @@ class ATTable {
 		this._unPushedRecords = new Array();
 		this.lastError = undefined;
 		this._idToRecordMap = new Object();
-		base.tables.push(this);
+		base._tables.push(this);
 		this._pullData();
 		this._mapIDsToRecords()
 	}
@@ -281,6 +281,11 @@ class ATTable {
 		return this._pulledRecords.concat(this._unPushedRecords);
 	}
 	
+	set records(value) {
+		app.displayErrorMessage("The records property of ATTable is read only");
+		contex.cancel();
+	}
+	
 	get fields() {
 		if (this._pulledRecords.length > 0) {
 			return Object.keys(this._pulledRecords[0]._fields);
@@ -288,6 +293,12 @@ class ATTable {
 			return undefined;
 		}
 	}
+	
+	set fields(value) {
+		app.displayErrorMessage("The fields property of ATTable is read only");
+		contex.cancel();
+	}
+	
 	_pullData() {
 		let httpRequest = new ATHTTPRequest(this);
 		let success = httpRequest.get();
@@ -344,8 +355,17 @@ class ATTable {
 class ATBase {
 	constructor(name) {
 		this.name = name;
-		this.tables = new Array();
+		this._tables = new Array();
 		this._authorize();
+	}
+	
+	get tables() {
+		return this._tables;
+	}
+	
+	set tables(value) {
+		app.displayErrorMessage("The tables property of ATBase is read only");
+		contex.cancel();
 	}
 	
 	static create(name) {
@@ -362,7 +382,7 @@ class ATBase {
 	}
 	
 	getRecordWithID(id) {
-		let _idToRecordMap = Object.assign({}, ...this.tables.map(table => table._idToRecordMap));
+		let _idToRecordMap = Object.assign({}, ...this._tables.map(table => table._idToRecordMap));
 		return _idToRecordMap[id];
 	} 
 	
