@@ -165,7 +165,7 @@ class ATRecord {
 	
 	set id(value) {
 		app.displayErrorMessage("The id property of ATRecord is read only");
-		contex.cancel();
+		context.cancel();
 	}
 	
 	get table() {
@@ -173,8 +173,8 @@ class ATRecord {
 	}
 	
 	set table(value) {
-		app.displayErrorMessage("The id property of ATRecord is read only");
-		contex.cancel();
+		app.displayErrorMessage("The table property of ATRecord is read only");
+		context.cancel();
 	}
 	
 	get createdTime() {
@@ -182,8 +182,8 @@ class ATRecord {
 	}
 	
 	set createdTime(value) {
-		app.displayErrorMessage("The id property of ATRecord is read only");
-		contex.cancel();
+		app.displayErrorMessage("The createdTime property of ATRecord is read only");
+		context.cancel();
 	}
 	
 	static create() {
@@ -195,7 +195,7 @@ class ATRecord {
 		record._id = data.id;
 		record._createdTimed = new Date(data._createdTimed);
 		record._fields = data.fields;
-		record.table = table;
+		record._table = table;
 		return record;
 	}
 	
@@ -306,7 +306,7 @@ class ATTable {
 	
 	set name(value) {
 		app.displayErrorMessage("The name property of ATTable is read only");
-		contex.cancel();
+		context.cancel();
 	}
 	
 	get base() {
@@ -315,7 +315,7 @@ class ATTable {
 	
 	set base(value) {
 		app.displayErrorMessage("The base property of ATTable is read only");
-		contex.cancel();
+		context.cancel();
 	}
 	
 	static create(name, base){
@@ -328,7 +328,7 @@ class ATTable {
 	
 	set records(value) {
 		app.displayErrorMessage("The records property of ATTable is read only");
-		contex.cancel();
+		context.cancel();
 	}
 	
 	get fields() {
@@ -341,7 +341,7 @@ class ATTable {
 	
 	set fields(value) {
 		app.displayErrorMessage("The fields property of ATTable is read only");
-		contex.cancel();
+		context.cancel();
 	}
 	
 	_pullData() {
@@ -410,7 +410,7 @@ class ATBase {
 	
 	set tables(value) {
 		app.displayErrorMessage("The tables property of ATBase is read only");
-		contex.cancel();
+		context.cancel();
 	}
 	
 	static create(name) {

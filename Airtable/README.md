@@ -16,9 +16,11 @@ Represents a single record in an Airtable base.
 		- _Array of ATRecord objects_: all records must have been added to a table and the table updated.
 		- _field [string]_ : a string denoting the name of the field which should be used to represent the records in the selection list.
 		- _options [object]_: a dictionary of options with the following available keys.
-			- **title** _[string] (optional)_: Title to display in the prompt.
-			- **message** _[string] (optional)_: Message to display in the prompt.
-			- **type** _[string] (optional)_: Valid values are "selectMultiple", "selectOne", and "selectButtons".
+			- **title** _[string]_ _(optional)_: Title to display in the prompt.
+			- **message** _[string]_ _(optional)_: Message to display in the prompt.
+			- **type** _[string]_ _(optional)_: Valid values are "selectMultiple", "selectOne", and "selectButtons".
+			- **filter** _[function]_ _(optional)_: A function to filter the records displayed.
+
 ### Properties
 - **id** _[string, readonly]_
 	- The unique id of the record in the Airtable base. Undefined until the record is added to a table and the table is updated.
@@ -26,6 +28,7 @@ Represents a single record in an Airtable base.
 	- The table to which the record belongs.
 - **createdTime** _[date, readonly]_
 	- The time that the record was created. Undefined until the record is added to a table and the table is updated.
+
 ### Functions
 - **getFieldValue(field)** -> _object_
 	- Takes a _string_ with the name of the field, and returns the contents of that field.
@@ -44,6 +47,7 @@ Represents a table within an Airtable base.
 ### Class Functions
 - **create(name, ATBase)** -> _ATBase_
 	- Create a new table object with a given name and associated with a given base. Name must coincide exactly with an existing table on the web.
+
 ### Properties
 - **name** _[string, readonly]_
 - **base** _[ATBase]_
@@ -51,6 +55,7 @@ Represents a table within an Airtable base.
 	- All of the records associated with the table.
 - **fields** _[Array of strings]_
 	- The names of the fields associated with records in the table.
+
 ### Functions
 - **addRecord(ATRecord)**
 	- Add a new record to the table. Will not be pushed to the web until `update()` is called.
@@ -63,11 +68,12 @@ Represents an individual Airtable base.
 ### Class Functions
 - **create(name)** -> _ATBase_
 	- Create new base object with given name.
+
 ### Properties
 - **name** _[string]_
 - **tables** _[Array of ATTable objects]_
 	- All of the tables associated with the base. 
+
 ### Functions
 - **getRecordWithID(id)** -> _ATRecord_
 	- Takes the unique id of a record within an associated table and returns the record object.
-
