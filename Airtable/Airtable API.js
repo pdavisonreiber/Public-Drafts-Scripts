@@ -157,6 +157,7 @@ class ATRecord {
 		this._createdTimed = undefined;
 		this._fields = new Object();
 		this._changedFields = new Object();
+		this._isLocalOnly = true;
 	}
 	
 	get id() {
@@ -196,6 +197,7 @@ class ATRecord {
 		record._createdTimed = new Date(data._createdTimed);
 		record._fields = data.fields;
 		record._table = table;
+		record._isLocalOnly = false;
 		return record;
 	}
 	
@@ -213,8 +215,12 @@ class ATRecord {
 	}
 	
 	linkRecord(field, record) {
+		if (!this._fields.hasOwnProperty(field)) {
+			this._fields[field] = new Array();
+		}
+		
 		this._fields[field].push(record.id);
-		this._changedFields[field] = this._fields[field];
+		this._changedFields[field] = this._fields[field]; 
 	}
 	
 	_pushToTable() {
@@ -377,7 +383,7 @@ class ATTable {
 	
 	addRecord(record) {
 		this._unPushedRecords.push(record);
-		record.table = this;
+		record._table = this;
 	}
 	
 	update() {
@@ -386,6 +392,9 @@ class ATTable {
 			let response = record._pushToTable(this);
 			if (!response.success) {
 				return false;
+			} else {
+				record._isLocalOnly = false;
+				record._changedFields = {};
 			}
 		}
 		
