@@ -68,6 +68,8 @@ Represents a table within an Airtable base.
 ### Functions
 - **addRecord(ATRecord)**
 	- Add a new record to the table. Will not be pushed to the web until `update()` is called.
+- **selectRecords(field, options)**
+	-  Equivalent to `ATRecord.selectRecords(table.records, field, options)`.
 - **update()** -> _boolean_
 	- Push changes to the base. Returns `true` if successful. 
 
@@ -86,3 +88,25 @@ Represents an individual Airtable base.
 ### Functions
 - **getRecordWithID(id)** -> _ATRecord_
 	- Takes the unique id of a record within an associated table and returns the record object.
+
+## Examples
+
+```
+var base = ATBase.create("Favourite Books");
+var books = ATTable.create("Books", base);
+var authors = ATTable.create("Authors", base);
+
+var newBook = ATRecord.create();
+newBook.setFieldValue("Title", "The Hobbit");
+newBook.setFieldValue("Genre", "Fantasy");
+
+var chosenAuthors = ATRecord.selectRecords(authors.records, "Name", {title: "Select Author", type: "selectOne"});
+var chosenAuthor = chosenAuthors[0];
+
+newBook.linkRecord("Author", chosenAuthor);
+
+books.addRecord(newBook);
+books.update();
+
+```
+
