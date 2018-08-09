@@ -100,7 +100,7 @@ var newBook = ATRecord.create();
 newBook.setFieldValue("Title", "The Hobbit");
 newBook.setFieldValue("Genre", "Fantasy");
 
-var chosenAuthors = ATRecord.selectRecords(authors.records, "Name", {title: "Select Author", type: "selectOne"});
+var chosenAuthors = authors.selectRecords("Name", {title: "Select Author", type: "selectOne"});
 var chosenAuthor = chosenAuthors[0];
 
 newBook.linkRecord("Author", chosenAuthor);
