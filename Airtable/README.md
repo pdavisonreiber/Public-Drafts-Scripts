@@ -1,3 +1,12 @@
+To use this as part of one of your script actions, follow these steps:
+- Download this script using the install button at the bottom of the page.
+- Download this [template action](https://actions.getdrafts.com/a/1Nc).
+- Add your own script to the "Script" action step after the "Include Action" step.
+- Get your base’s endpoint and your API key from the [Airtable API documentation](https://airtable.com/api).
+- When prompted, enter these into the credential prompt. These details are stored locally on your device, and only need to be entered once for each base you access. To delete them, go to Credentials in the Drafts settings screen.
+
+---
+
 # Airtable
 
 Airtable is a web-based spreadsheet and database tool which can be used to organise a large variety of different kinds of data including text, images, files, and more. The scripting interfaces below are convenience wrappers that allow easy interaction with Airtable’s REST API.
