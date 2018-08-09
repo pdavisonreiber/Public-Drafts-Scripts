@@ -267,7 +267,14 @@ class ATRecord {
 			case "selectMultiple":
 			case "selectOne":
 				let fieldToRecordMap = {};
-				records.forEach(record => { fieldToRecordMap[record._fields[field]] = record });
+
+				records.forEach(function(record) { 
+					if (!record.hasOwnProperty("_fields")) { alert(record.id) };
+					if (record._fields.hasOwnProperty(field)) {
+						fieldToRecordMap[record._fields[field]] = record; 
+					}
+				});
+				
 				let recordFields = records.filter(filter).map(record => record._fields[field]).sort((a, b) => a.localeCompare(b));
 				prompt.addSelect("selectedRecords", "", recordFields, [], type == "selectMultiple");
 				prompt.addButton("OK");
@@ -363,7 +370,8 @@ class ATTable {
 				let success = httpRequest.get({"offset": offset});
 				
 				if (success) {
-					this._pulledRecords = this._pulledRecords.concat(httpRequest.responseData.records);
+					let moreRawData = httpRequest.responseData.records;
+					this._pulledRecords = this._pulledRecords.concat(moreRawData.map(rec => ATRecord._createFromData(rec, this)));
 				} else {
 					this.lastError = httpRequest.error;
 					this.lastStatusCode = httpRequest.statusCode;
@@ -384,6 +392,10 @@ class ATTable {
 	addRecord(record) {
 		this._unPushedRecords.push(record);
 		record._table = this;
+	}
+	
+	selectRecords(field, options) {
+		return ATRecord.selectRecords(this._pulledRecords, field, options);
 	}
 	
 	update() {
