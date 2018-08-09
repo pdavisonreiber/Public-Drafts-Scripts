@@ -431,7 +431,7 @@ class ATBase {
 		credential.addTextField("endpoint", "Endpoint");
 		credential.addPasswordField("apiKey", "API key");
 		credential.authorize();
-		this._endpoint = credential.getValue("endpoint");
+		this._endpoint = credential.getValue("endpoint").replace("https://api.airtable.com/v0/", "").replace("/", "").trim();
 		this._apiKey = credential.getValue("apiKey");
 	}
 	
