@@ -268,8 +268,7 @@ class ATRecord {
 			case "selectOne":
 				let fieldToRecordMap = {};
 
-				records.forEach(function(record) { 
-					if (!record.hasOwnProperty("_fields")) { alert(record.id) };
+				records.forEach(function(record) {
 					if (record._fields.hasOwnProperty(field)) {
 						fieldToRecordMap[record._fields[field]] = record; 
 					}
