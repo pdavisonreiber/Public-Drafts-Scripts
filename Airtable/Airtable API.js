@@ -202,7 +202,11 @@ class ATRecord {
 	}
 	
 	getFieldValue(field) {
-		return this._fields[field];
+		if (this._fields.hasOwnProperty(field)) {
+			return this._fields[field];
+		} else {
+			return undefined;
+		}
 	}
 	
 	setFieldValue(field, value) {
@@ -259,6 +263,16 @@ class ATRecord {
 		let message = options.message || "";
 		let type = options.type || "selectMultiple";
 		let filter = options.filter || function () { return true };
+
+		if (typeof field == "string") {
+			var promptLabel = function(record) {
+				return record._fields[field];
+			}
+		} else if (typeof field == "function") {
+			var promptLabel = function(record) {
+				return field(record);
+			}
+		}
 		
 		let prompt = Prompt.create();
 		prompt.title = title;
@@ -266,20 +280,18 @@ class ATRecord {
 		switch (type) {
 			case "selectMultiple":
 			case "selectOne":
-				let fieldToRecordMap = {};
+				let labelToRecordMap = {};
 
 				records.forEach(function(record) {
-					if (record._fields.hasOwnProperty(field)) {
-						fieldToRecordMap[record._fields[field]] = record; 
-					}
+					labelToRecordMap[promptLabel(record)] = record; 
 				});
 				
-				let recordFields = records.filter(filter).map(record => record._fields[field]).sort((a, b) => a.localeCompare(b));
+				let recordFields = records.filter(filter).map(promptLabel).sort((a, b) => a.localeCompare(b));
 				prompt.addSelect("selectedRecords", "", recordFields, [], type == "selectMultiple");
 				prompt.addButton("OK");
 				let selected = prompt.show();
 				if (selected) {
-					return prompt.fieldValues["selectedRecords"].map(field => fieldToRecordMap[field]);
+					return prompt.fieldValues["selectedRecords"].map(label => labelToRecordMap[label]);
 				} else {
 					context.cancel();
 				}
@@ -287,7 +299,7 @@ class ATRecord {
 			case "selectButtons":
 				let idToRecordMap = {};
 				records.forEach(record => { idToRecordMap[record._id] = record });
-				records.filter(filter).sort((a, b) => a._fields[field].localeCompare(b._fields[field])).forEach(record => { prompt.addButton(record._fields[field], record._id) });
+				records.filter(filter).sort((a, b) => promptLabel(a).localeCompare(promptLabel(b))).forEach(record => { prompt.addButton(promptLabel(record), record._id) });
 				let selected2 = prompt.show();
 				if (selected2) {
 					return [idToRecordMap[prompt.buttonPressed]];

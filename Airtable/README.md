@@ -23,7 +23,7 @@ Represents a single record in an Airtable base.
 	- Present a list of records to the user for them to select one or more
 	- **Parameters**
 		- _Array of ATRecord objects_: all records must have been added to a table and the table updated.
-		- _field [string]_ : a string denoting the name of the field which should be used to represent the records in the selection list.
+		- _field [string or function]_ : A string denoting the name of the field which should be used to represent the records in the selection list. Alternatively, pass a function which takes each record and returns a string to display. This can be used to combine multiple fields together to create the labels for the selection list.	
 		- _options [object]_: a dictionary of options with the following available keys.
 			- **title** _[string]_ _(optional)_: Title to display in the prompt.
 			- **message** _[string]_ _(optional)_: Message to display in the prompt.
