@@ -97,13 +97,15 @@ class ATHTTPRequest {
 		
 		if (response.success) {
 			this.responseData = JSON.parse(response.responseText);
+			this.success = true;
 		} else {
+			this.success = false;
 			this.error = ATHTTPRequest._errorMessage(response);
 			this.table.lastError = this.error;
 			app.displayErrorMessage(this.error);
 		}
 		
-		return response.success;
+		return this.success;
 	}
 	
 	post(record) {
@@ -118,13 +120,15 @@ class ATHTTPRequest {
 		
 		if (response.success) {
 			this.responseData = JSON.parse(response.responseText);
+			this.success = true;
 		} else {
+			this.success = false;
 			this.error = ATHTTPRequest._errorMessage(response);
 			this.table.lastError = this.error;
 			app.displayErrorMessage(this.error);
 		}
 		
-		return response.success;
+		return this.success;
 	}
 	
 	patch(record) {
@@ -139,13 +143,15 @@ class ATHTTPRequest {
 		
 		if (response.success) {
 			this.responseData = JSON.parse(response.responseText);
+			this.success = true;
 		} else {
+			this.success = false;
 			this.error = ATHTTPRequest._errorMessage(response);
 			this.table.lastError = this.error;
 			app.displayErrorMessage(this.error);
 		}
 		
-		return response.success;
+		return this.success;
 	}
 }
 
@@ -228,8 +234,8 @@ class ATRecord {
 	}
 	
 	_pushToTable() {
-		let httpRequest = new ATHTTPRequest(this._table);
-		let success = httpRequest.post(this);
+		let httpRequest = new ATHTTPRequest(this.table);
+		httpRequest.post(this);
 		this._changedFields = {};
 		this._id = httpRequest.responseData.id;
 		this._fields = httpRequest.responseData.fields;
@@ -255,6 +261,14 @@ class ATRecord {
 		} else {
 			alert("ERROR: record not yet added to table");
 			return false;
+		}
+	}
+	
+	static isoDate(date, includeTime = false) {
+		if (includeTime) {
+			return date.toISOString();
+		} else {
+			return date.toISOString().split("T")[0];
 		}
 	}
 	
