@@ -95,7 +95,7 @@ function mustachePrompt(text, dateFormat) {
 }
 
 function offsetDate(date, string, dateFormat) {
-  let d = date
+  let d = new Date(date)
   let offsetRegex = /(\+|-)(\d+)(d|w|m)/
   let match = string.match(offsetRegex)
   let multiplier = (match[1] == "+" ? 1 : -1)
