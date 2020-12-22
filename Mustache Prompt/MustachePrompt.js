@@ -86,7 +86,7 @@ function mustachePrompt(text, dateFormat) {
     //alert(JSON.stringify(data, 2))
     
     let template = MustacheTemplate.createWithTemplate(text)
-    let result = template.render(data)
+    let result = template.render(data).replace(/\n{2,}/g, "\n\n")
     return result
     
   } else {
