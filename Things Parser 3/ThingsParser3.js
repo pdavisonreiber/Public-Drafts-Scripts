@@ -138,14 +138,17 @@ function processProject(item) {
     project.tags = item.getAttribute("data-tags").split(",").map(t => t.trim())
   }
   
-  if (item.hasChildren) {
-    if (item.firstChild.getAttribute("data-type") == "note") {
-      project.notes = item.firstChild.bodyContentString
-    } 
+  if (item.hasChildren) { 
     
     for (child of item.children) {
       if (child.getAttribute("data-type") == "task") {
        project.addTodo(processTask(child)) 
+      } else if (child.getAttribute("data-type") == "note") {
+        if (project.notes) {
+          project.notes += "\n" + child.bodyContentString
+        } else {
+          project.notes = child.bodyContentString
+        }
       } else if (child.getAttribute("data-type") == "project") {
         let heading = processHeading(child)
         project.addHeading(heading)
