@@ -82,13 +82,15 @@ function processTask(item) {
   }
   
   if (item.hasChildren) {
-    if (item.firstChild.getAttribute("data-type") == "note") {
-      task.notes = item.firstChild.bodyContentString
-    } 
-    
     for (child of item.children) {
       if (child.getAttribute("data-type") == "task") {
        task.addChecklistItem(processSubTask(child)) 
+      } else if (child.getAttribute("data-type") == "note") {
+        if (task.notes) {
+          task.notes += "\n" + child.bodyContentString
+        } else {
+          task.notes = child.bodyContentString
+        }
       }
     }
   }
